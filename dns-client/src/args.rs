@@ -17,7 +17,7 @@ pub struct Args {
     #[clap(
     short = 't',
     long = "type",
-    value_parser = PossibleValuesParser::new(["A"]).map(| s | s.parse::< QueryType > ().unwrap()),
+    value_parser = PossibleValuesParser::new(["A", "AAAA", "MX", "CNAME", "NS"]).map(| s | s.parse::< QueryType > ().unwrap()),
     default_value = "A"
     )]
     pub qtype: QueryType,
