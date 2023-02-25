@@ -1,0 +1,10 @@
+[package]
+name = "dns-client"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+dns-common = { path = "../dns-common" }
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
