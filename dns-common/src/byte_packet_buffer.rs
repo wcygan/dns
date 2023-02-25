@@ -24,7 +24,7 @@ impl BytePacketBuffer {
 
     fn read(&mut self) -> Result<u8> {
         if self.position >= 512 {
-            return Err(anyhow!("out of bounds"));
+            return Err(anyhow!("End of buffer"));
         }
 
         let result = self.buffer[self.position];
@@ -40,18 +40,17 @@ impl BytePacketBuffer {
 
     fn get(&self, position: usize) -> Result<u8> {
         if position >= 512 {
-            return Err(anyhow!("out of bounds"));
+            return Err(anyhow!("End of buffer"));
         }
 
         Ok(self.buffer[position])
     }
 
-    fn get_range(&self, start: usize, end: usize) -> Result<&[u8]> {
-        if end > 512 {
-            return Err(anyhow!("out of bounds"));
+    fn get_range(&mut self, start: usize, len: usize) -> Result<&[u8]> {
+        if start + len >= 512 {
+            return Err(anyhow!("End of buffer"));
         }
-
-        Ok(&self.buffer[start..end])
+        Ok(&self.buffer[start..start + len as usize])
     }
 
     pub fn read_u16(&mut self) -> Result<u16> {
@@ -95,7 +94,7 @@ impl BytePacketBuffer {
                 }
 
                 let b2 = self.get(pos + 1)? as u16;
-                let offset = ((len as u16 & 0xC0) << 8) | b2;
+                let offset = (((len as u16) ^ 0xC0) << 8) | b2;
                 pos = offset as usize;
 
                 jumped = true;
@@ -109,8 +108,8 @@ impl BytePacketBuffer {
 
                 outstr.push_str(delim);
 
-                let str_buf = self.get_range(pos, len as usize)?;
-                outstr.push_str(&String::from_utf8_lossy(str_buf).to_lowercase());
+                let str_buffer = self.get_range(pos, len as usize)?;
+                outstr.push_str(&String::from_utf8_lossy(str_buffer).to_lowercase());
                 delim = ".";
                 pos += len as usize;
             }

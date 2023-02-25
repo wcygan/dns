@@ -49,7 +49,7 @@ impl DnsHeader {
         let flags = buffer.read_u16()?;
 
         let a = (flags >> 8) as u8;
-        let b = (flags >> 0xFF) as u8;
+        let b = (flags & 0xFF) as u8;
 
         self.recursion_desired = (a & (1 << 0)) > 0;
         self.truncated_message = (a & (1 << 1)) > 0;
