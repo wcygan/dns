@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 dns-common = { path = "../dns-common" }
+clap.workspace = true
 anyhow.workspace = true
 tokio.workspace = true
 tracing.workspace = true

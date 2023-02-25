@@ -13,7 +13,7 @@ impl BytePacketBuffer {
         }
     }
 
-    fn position(&self) -> usize {
+    pub fn position(&self) -> usize {
         self.position
     }
 
@@ -118,6 +118,50 @@ impl BytePacketBuffer {
         if !jumped {
             self.seek(pos)?;
         }
+
+        Ok(())
+    }
+
+    fn write(&mut self, val: u8) -> Result<()> {
+        if self.position >= 512 {
+            return Err(anyhow!("End of buffer"));
+        }
+
+        self.buffer[self.position] = val;
+        self.position += 1;
+        Ok(())
+    }
+
+    pub fn write_u8(&mut self, val: u8) -> Result<()> {
+        self.write(val)
+    }
+
+    pub fn write_u16(&mut self, val: u16) -> Result<()> {
+        self.write((val >> 8) as u8)?;
+        self.write((val & 0xFF) as u8)
+    }
+
+    pub fn write_u32(&mut self, val: u32) -> Result<()> {
+        self.write(((val >> 24) & 0xFF) as u8)?;
+        self.write(((val >> 16) & 0xFF) as u8)?;
+        self.write(((val >> 8) & 0xFF) as u8)?;
+        self.write(((val >> 0) & 0xFF) as u8)
+    }
+
+    pub fn write_qname(&mut self, qname: &str) -> Result<()> {
+        for label in qname.split('.') {
+            let len = label.len();
+            if len > 0x3f {
+                return Err(anyhow!("Single label exceeds 63 characters of length"));
+            }
+
+            self.write_u8(len as u8)?;
+            for b in label.as_bytes() {
+                self.write_u8(*b)?;
+            }
+        }
+
+        self.write_u8(0)?;
 
         Ok(())
     }

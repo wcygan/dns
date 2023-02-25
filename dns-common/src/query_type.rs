@@ -19,3 +19,14 @@ impl QueryType {
         }
     }
 }
+
+impl std::str::FromStr for QueryType {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "A" => Ok(QueryType::A),
+            _ => Err(anyhow::anyhow!("Unknown query type")),
+        }
+    }
+}
