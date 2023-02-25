@@ -1,4 +1,6 @@
-use crate::{DnsHeader, DnsQuestion, DnsRecord};
+use crate::{BytePacketBuffer, DnsHeader, DnsQuestion, DnsRecord, QueryType};
+use anyhow::Result;
+use tokio::io::AsyncReadExt;
 
 #[derive(Debug, Clone)]
 pub struct DnsPacket {
@@ -7,4 +9,45 @@ pub struct DnsPacket {
     pub answers: Vec<DnsRecord>,
     pub authorities: Vec<DnsRecord>,
     pub resources: Vec<DnsRecord>,
+}
+
+impl DnsPacket {
+    pub fn new() -> Self {
+        DnsPacket {
+            header: DnsHeader::new(),
+            questions: Vec::new(),
+            answers: Vec::new(),
+            authorities: Vec::new(),
+            resources: Vec::new(),
+        }
+    }
+
+    pub fn from_buffer(buffer: &mut BytePacketBuffer) -> Result<DnsPacket> {
+        let mut result = DnsPacket::new();
+
+        result.header.read(buffer)?;
+
+        for _ in 0..result.header.question_count {
+            let mut q = DnsQuestion::new("".to_string(), QueryType::Unknown(0));
+            q.read(buffer)?;
+            result.questions.push(q);
+        }
+
+        for _ in 0..result.header.answer_count {
+            let mut r = DnsRecord::read(buffer)?;
+            result.answers.push(r);
+        }
+
+        for _ in 0..result.header.authoritative_entry_count {
+            let mut r = DnsRecord::read(buffer)?;
+            result.authorities.push(r);
+        }
+
+        for _ in 0..result.header.resource_entry_count {
+            let mut r = DnsRecord::read(buffer)?;
+            result.resources.push(r);
+        }
+
+        Ok(result)
+    }
 }
