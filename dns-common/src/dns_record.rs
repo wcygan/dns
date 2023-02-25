@@ -2,6 +2,8 @@ use crate::{BytePacketBuffer, QueryType};
 use anyhow::Result;
 use std::net::Ipv4Addr;
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[allow(dead_code)]
 pub enum DnsRecord {
     UNKNOWN {
         domain: String,
