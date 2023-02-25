@@ -2,11 +2,12 @@ use anyhow::Result;
 use clap::Parser;
 
 use crate::args::Args;
+use crate::run::run;
 
 mod args;
+mod run;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let args = Args::parse();
-    Ok(())
+    run(Args::parse()).await
 }
