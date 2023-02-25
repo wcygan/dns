@@ -2,7 +2,7 @@
 
 DNS server & client built in Rust.
 
----
+## Resources
 
-These were built following the guidance of [dnsguide](https://github.com/EmilHernvall/dnsguide) with an
-added [Tokio](https://tokio.rs/) flavor 
+- [dnsguide](https://github.com/EmilHernvall/dnsguide) - "A guide to writing a DNS Server from scratch in Rust"
+- [Tokio](https://tokio.rs/) - asynchronous I/O
