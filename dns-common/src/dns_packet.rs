@@ -1,6 +1,7 @@
-use crate::{BytePacketBuffer, DnsHeader, DnsQuestion, DnsRecord, QueryType};
 use anyhow::Result;
 use tokio::io::AsyncReadExt;
+
+use crate::{BytePacketBuffer, DnsHeader, DnsQuestion, DnsRecord, QueryType};
 
 #[derive(Debug, Clone)]
 pub struct DnsPacket {

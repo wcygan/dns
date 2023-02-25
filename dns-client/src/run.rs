@@ -27,6 +27,15 @@ pub async fn run(args: Args) -> Result<()> {
         .await
         .context("Failed to send request to DNS server")?;
 
+    let mut res_buffer = BytePacketBuffer::new();
+    socket
+        .recv_from(&mut res_buffer.buffer)
+        .await
+        .context("Failed to receive response from DNS server")?;
+
+    let response = DnsPacket::from_buffer(&mut res_buffer)?;
+    println!("{:#?}", response);
+
     Ok(())
 }
 
