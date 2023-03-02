@@ -3,13 +3,17 @@ use tokio::net::UdpSocket;
 
 use dns_common::{lookup, BytePacketBuffer, DnsPacket, ResultCode};
 
+// Default to 8.8.8.8:53 which is Google's DNS server
+// Alternatively we could use 1.1.1.1:53 which is Cloudflare's DNS server
+// Or some user-specific DNS server
+static GOOGLE_DNS: &str = "8.8.8.8:53";
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let mut buf = [0; 512];
     let socket = UdpSocket::bind("0.0.0.0:8080").await?;
     loop {
         let (size, src) = socket.recv_from(&mut buf).await?;
-        println!("{}: {}", src, String::from_utf8_lossy(&buf[..size]),);
         handle_query(&socket).await?;
     }
 }
@@ -26,10 +30,7 @@ async fn handle_query(socket: &UdpSocket) -> Result<()> {
     packet.header.response = true;
 
     if let Some(question) = request.questions.pop() {
-        println!("Received {:?}", question);
-
-        if let Ok(result) = lookup(socket, ("8.8.8.8", 53), &question.qname, &question.qtype).await
-        {
+        if let Ok(result) = lookup(socket, GOOGLE_DNS, &question.qname, &question.qtype).await {
             packet.questions.push(question);
             packet.header.result_code = result.header.result_code;
 
@@ -59,8 +60,6 @@ async fn handle_query(socket: &UdpSocket) -> Result<()> {
 
     let len = res_buffer.position();
     let data = res_buffer.get_range(0, len)?;
-
-    println!("Sending response to {}", src);
 
     socket.send_to(data, src).await?;
 
