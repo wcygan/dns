@@ -46,7 +46,7 @@ impl BytePacketBuffer {
         Ok(self.buffer[position])
     }
 
-    fn get_range(&mut self, start: usize, len: usize) -> Result<&[u8]> {
+    pub fn get_range(&mut self, start: usize, len: usize) -> Result<&[u8]> {
         if start + len >= 512 {
             return Err(anyhow!("End of buffer"));
         }
