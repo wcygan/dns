@@ -1,5 +1,4 @@
 use anyhow::Result;
-use tokio::io::AsyncReadExt;
 
 use crate::{BytePacketBuffer, DnsHeader, DnsQuestion, DnsRecord, QueryType};
 

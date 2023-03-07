@@ -17,11 +17,6 @@ impl BytePacketBuffer {
         self.position
     }
 
-    fn step(&mut self, count: usize) -> Result<()> {
-        self.position += count;
-        Ok(())
-    }
-
     fn read(&mut self) -> Result<u8> {
         if self.position >= 512 {
             return Err(anyhow!("End of buffer"));
