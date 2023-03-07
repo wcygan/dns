@@ -31,7 +31,7 @@ async fn send_request(
     packet.header.recursion_desired = true;
     packet
         .questions
-        .push(DnsQuestion::new(name.clone(), qtype.clone()));
+        .push(DnsQuestion::new(name.clone(), *qtype));
     let mut req_buffer = BytePacketBuffer::new();
     packet.write(&mut req_buffer)?;
 

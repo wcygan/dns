@@ -13,7 +13,7 @@ async fn main() -> Result<()> {
     let mut buf = [0; 512];
     let socket = UdpSocket::bind("0.0.0.0:8080").await?;
     loop {
-        let (size, src) = socket.recv_from(&mut buf).await?;
+        let (_size, _src) = socket.recv_from(&mut buf).await?;
         handle_query(&socket).await?;
     }
 }

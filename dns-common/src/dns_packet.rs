@@ -35,17 +35,17 @@ impl DnsPacket {
         }
 
         for _ in 0..result.header.answer_count {
-            let mut r = DnsRecord::read(buffer)?;
+            let r = DnsRecord::read(buffer)?;
             result.answers.push(r);
         }
 
         for _ in 0..result.header.authoritative_entry_count {
-            let mut r = DnsRecord::read(buffer)?;
+            let r = DnsRecord::read(buffer)?;
             result.authorities.push(r);
         }
 
         for _ in 0..result.header.resource_entry_count {
-            let mut r = DnsRecord::read(buffer)?;
+            let r = DnsRecord::read(buffer)?;
             result.resources.push(r);
         }
 

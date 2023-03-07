@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
-use tokio::net::{ToSocketAddrs, UdpSocket};
+use tokio::net::ToSocketAddrs;
 
-use dns_common::{lookup, socket, BytePacketBuffer, DnsPacket, DnsQuestion, QueryType};
+use dns_common::{lookup, socket};
 
 use crate::args::Args;
 

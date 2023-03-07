@@ -50,11 +50,11 @@ impl BytePacketBuffer {
         if start + len >= 512 {
             return Err(anyhow!("End of buffer"));
         }
-        Ok(&self.buffer[start..start + len as usize])
+        Ok(&self.buffer[start..start + len])
     }
 
     pub fn read_u16(&mut self) -> Result<u16> {
-        let mut result = ((self.read()? as u16) << 8) | (self.read()? as u16);
+        let result = ((self.read()? as u16) << 8) | (self.read()? as u16);
         Ok(result)
     }
 
@@ -62,7 +62,7 @@ impl BytePacketBuffer {
         let res = ((self.read()? as u32) << 24)
             | ((self.read()? as u32) << 16)
             | ((self.read()? as u32) << 8)
-            | ((self.read()? as u32) << 0);
+            | (self.read()? as u32);
 
         Ok(res)
     }
@@ -145,7 +145,7 @@ impl BytePacketBuffer {
         self.write(((val >> 24) & 0xFF) as u8)?;
         self.write(((val >> 16) & 0xFF) as u8)?;
         self.write(((val >> 8) & 0xFF) as u8)?;
-        self.write(((val >> 0) & 0xFF) as u8)
+        self.write((val & 0xFF) as u8)
     }
 
     pub fn write_qname(&mut self, qname: &str) -> Result<()> {
