@@ -1,12 +1,64 @@
+use std::net::Ipv4Addr;
+
 use anyhow::{Context, Result};
+use async_recursion::async_recursion;
 use tokio::net::{ToSocketAddrs, UdpSocket};
 
-use crate::{BytePacketBuffer, DnsPacket, DnsQuestion, QueryType};
+use crate::{BytePacketBuffer, DnsPacket, DnsQuestion, QueryType, ResultCode};
 
 pub async fn socket(addr: impl ToSocketAddrs) -> Result<UdpSocket> {
     UdpSocket::bind(addr)
         .await
         .context("Failed to bind to local socket")
+}
+
+#[async_recursion]
+pub async fn recursive_lookup(
+    socket: &UdpSocket,
+    dns_server: Ipv4Addr,
+    qname: &str,
+    qtype: QueryType,
+) -> Result<DnsPacket> {
+    let mut ns = dns_server;
+
+    loop {
+        println!("attempting lookup of {:?} {} with ns {}", qtype, qname, ns);
+
+        // The next step is to send the query to the active server.
+        let ns_copy = ns;
+
+        let server = (ns_copy, 53);
+        let response = lookup(socket, server, &qname.to_string(), &qtype).await?;
+
+        // If there are entries in the answer section, and no errors, we are done!
+        if !response.answers.is_empty() && response.header.result_code == ResultCode::NOERROR {
+            return Ok(response);
+        }
+
+        if response.header.result_code == ResultCode::NXDOMAIN {
+            return Ok(response);
+        }
+
+        if let Some(new_ns) = response.get_resolved_ns(qname) {
+            ns = new_ns;
+            continue;
+        }
+
+        let new_ns_name = match response.get_unresolved_ns(qname) {
+            Some(name) => name,
+            None => {
+                return Ok(response);
+            }
+        };
+
+        let recursive_response = recursive_lookup(socket, ns, new_ns_name, QueryType::A).await?;
+
+        if let Some(new_ns) = recursive_response.get_random_a() {
+            ns = new_ns;
+        } else {
+            return Ok(response);
+        }
+    }
 }
 
 pub async fn lookup(

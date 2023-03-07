@@ -1,12 +1,14 @@
+use std::net::Ipv4Addr;
+
 use anyhow::Result;
 use tokio::net::UdpSocket;
 
-use dns_common::{lookup, BytePacketBuffer, DnsPacket, ResultCode};
+use dns_common::{recursive_lookup, BytePacketBuffer, DnsPacket, ResultCode};
 
 // Default to 8.8.8.8:53 which is Google's DNS server
 // Alternatively we could use 1.1.1.1:53 which is Cloudflare's DNS server
 // Or some user-specific DNS server
-static GOOGLE_DNS: &str = "8.8.8.8:53";
+static GOOGLE_DNS: &str = "8.8.8.8";
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -30,7 +32,8 @@ async fn handle_query(socket: &UdpSocket) -> Result<()> {
     packet.header.response = true;
 
     if let Some(question) = request.questions.pop() {
-        if let Ok(result) = lookup(socket, GOOGLE_DNS, &question.qname, &question.qtype).await {
+        let dns = GOOGLE_DNS.parse::<Ipv4Addr>()?;
+        if let Ok(result) = recursive_lookup(socket, dns, &question.qname, question.qtype).await {
             packet.questions.push(question);
             packet.header.result_code = result.header.result_code;
 

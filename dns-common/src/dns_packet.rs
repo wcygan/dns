@@ -1,3 +1,5 @@
+use std::net::Ipv4Addr;
+
 use anyhow::Result;
 
 use crate::{BytePacketBuffer, DnsHeader, DnsQuestion, DnsRecord, QueryType};
@@ -73,5 +75,47 @@ impl DnsPacket {
         }
 
         Ok(())
+    }
+
+    pub fn get_random_a(&self) -> Option<Ipv4Addr> {
+        self.answers
+            .iter()
+            .filter_map(|r| match r {
+                DnsRecord::A { address, .. } => Some(*address),
+                _ => None,
+            })
+            .next()
+    }
+
+    fn get_ns<'a>(&'a self, qname: &'a str) -> impl Iterator<Item = (&'a str, &'a str)> {
+        self.authorities
+            .iter()
+            .filter_map(|r| match r {
+                DnsRecord::NS {
+                    domain,
+                    name_server,
+                    ..
+                } => Some((domain.as_str(), name_server.as_str())),
+                _ => None,
+            })
+            .filter(move |(domain, _)| qname.ends_with(*domain))
+    }
+
+    pub fn get_resolved_ns(&self, qname: &str) -> Option<Ipv4Addr> {
+        self.get_ns(qname)
+            .flat_map(|(_, host)| {
+                self.resources.iter().filter_map(move |r| match r {
+                    DnsRecord::A {
+                        domain, address, ..
+                    } if domain == host => Some(address),
+                    _ => None,
+                })
+            })
+            .copied()
+            .next()
+    }
+
+    pub fn get_unresolved_ns<'a>(&'a self, qname: &'a str) -> Option<&'a str> {
+        self.get_ns(qname).map(|(_, host)| host).next()
     }
 }
