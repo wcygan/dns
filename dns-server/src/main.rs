@@ -1,7 +1,9 @@
-use std::net::Ipv4Addr;
+use std::net::{Ipv4Addr, SocketAddr};
+use std::sync::Arc;
 
 use anyhow::Result;
 use tokio::net::UdpSocket;
+use tub::Pool;
 
 use dns_common::{recursive_lookup, BytePacketBuffer, DnsPacket, ResultCode};
 
@@ -12,15 +14,18 @@ static GOOGLE_DNS: &str = "8.8.8.8";
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut buf = [0; 512];
     let socket = UdpSocket::bind("0.0.0.0:8080").await?;
+    let pool = Arc::new(get_socket_pool().await?);
     loop {
-        let (_size, _src) = socket.recv_from(&mut buf).await?;
-        handle_query(&socket).await?;
+        let pool = pool.clone();
+        let (src, buffer) = get_request(&socket).await?;
+        tokio::spawn(async move {
+            send_response(pool, src, buffer).await.unwrap();
+        });
     }
 }
 
-async fn handle_query(socket: &UdpSocket) -> Result<()> {
+async fn get_request(socket: &UdpSocket) -> Result<(SocketAddr, BytePacketBuffer)> {
     let mut buf = BytePacketBuffer::new();
     let (_, src) = socket.recv_from(&mut buf.buffer).await?;
     let mut request = DnsPacket::from_buffer(&mut buf)?;
@@ -61,10 +66,25 @@ async fn handle_query(socket: &UdpSocket) -> Result<()> {
     let mut res_buffer = BytePacketBuffer::new();
     packet.write(&mut res_buffer)?;
 
-    let len = res_buffer.position();
-    let data = res_buffer.get_range(0, len)?;
+    Ok((src, res_buffer))
+}
 
-    socket.send_to(data, src).await?;
-
+pub async fn send_response(
+    pool: Arc<Pool<UdpSocket>>,
+    src: SocketAddr,
+    buffer: BytePacketBuffer,
+) -> Result<()> {
+    pool.get().await.send_to(&buffer.buffer, src).await?;
     Ok(())
+}
+
+pub async fn get_socket_pool() -> Result<Pool<UdpSocket>> {
+    let mut sockets = vec![];
+
+    for _ in 0..10 {
+        let socket = UdpSocket::bind("0.0.0.0:0").await?;
+        sockets.push(socket);
+    }
+
+    Ok(Pool::from_vec(sockets))
 }

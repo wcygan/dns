@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 dns-common = { path = "../dns-common" }
+tub.workspace = true
 clap.workspace = true
 anyhow.workspace = true
 tokio.workspace = true
